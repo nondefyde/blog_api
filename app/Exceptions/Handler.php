@@ -49,17 +49,17 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {
-//        if ($e instanceof ModelNotFoundException) {
-//            $e = new NotFoundHttpException($e->getMessage(), $e);
-//        }
-
-        if(!$this->isApiCall($request)) {
-            $retval = parent::render($request, $e);
-        } else {
-                $retval = $this->getJsonResponseForException($request, $e);
+        if ($e instanceof ModelNotFoundException) {
+            $e = new NotFoundHttpException($e->getMessage(), $e);
         }
 
-        return $retval;
+//        if(!$this->isApiCall($request)) {
+//            $retval = parent::render($request, $e);
+//        } else {
+//                $retval = $this->getJsonResponseForException($request, $e);
+//        }
+//
+//        return $retval;
 
 //        return parent::render($request, $e);
     }

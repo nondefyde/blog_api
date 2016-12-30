@@ -37,19 +37,10 @@ class PostController extends Controller
                     'method' => 'GET'
                 ];
             }
-            $response = [
-                'error' => false,
-                'message' => 'List of all Posts',
-                'data' => $posts
-            ];
+            $response = $this->createResponse(false,$posts,'List of Posts',null);
             return response()->json($response, 200);
         }
-
-        $response = [
-            'error' => true,
-            'message' => 'An error occurred'
-        ];
-
+        $response = $this->createResponse(true,null,'An error occurred',null);
         return response()->json($response, 501);
     }
 
@@ -66,10 +57,7 @@ class PostController extends Controller
         $user = JWTAuth::parseToken()->authenticate();
 
         if ($user->user_type != 1) {
-            $response = [
-                'error' => true,
-                'message' => 'Unauthorized to create a post'
-            ];
+            $response = $this->createResponse(true,null,'Unauthorized to create a post',null);
             return response()->json($response, 401);
         }
 
@@ -79,11 +67,7 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $response = [
-                'error'     => true,
-                "message"   => "There are problems with your input",
-                "messages"  => $validator->errors()->all()
-            ];
+            $response = $this->createResponse(true,null,"There are problems with your input",$validator->errors()->all());
             return response()->json($response,400);
         }
 
@@ -97,18 +81,10 @@ class PostController extends Controller
                 'href' => 'api/v1/post/' . $post->slug,
                 'method' => 'GET'
             ];
-            $response = [
-                'message' => 'Post created',
-                'data' => $post_link
-            ];
+            $response = $this->createResponse(false,$post_link,'Post created',null);
             return response()->json($response, 201);
         }
-
-        $response = [
-            'error' => true,
-            'message' => 'Failed to save post'
-        ];
-
+        $response = $this->createResponse(true,null,'Failed to save post',null);
         return response()->json($response, 404);
     }
 
@@ -126,19 +102,10 @@ class PostController extends Controller
                 'href' => '#',
                 'method' => 'GET'
             ];
-            $response = [
-                'error' => false,
-                'message' => 'Post information',
-                'data' => $post
-            ];
+            $response = $this->createResponse(false,$post,'Post details',null);
             return response()->json($response, 200);
         }
-
-        $response = [
-            'error' => true,
-            'message' => 'Post Not Found'
-        ];
-
+        $response = $this->createResponse(true,null,'Post Not Found',null);
         return response()->json($response, 404);
     }
     /**
@@ -148,9 +115,49 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        //
+        $this->setTrim($request);
+
+        $user = JWTAuth::parseToken()->authenticate();
+
+        if ($user->user_type != 1) {
+            $response = $this->createResponse(true,null,'Unauthorized to update post',null);
+            return response()->json($response, 401);
+        }
+
+        $post = Post::where('slug', $slug)->first();
+        if(!$post){
+            $response = $this->createResponse(true,null,'Post Not Found',null);
+            return response()->json($response, 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|max:190',
+            'content' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            $response = $this->createResponse(true,null,"There are problems with your input",$validator->errors()->all());
+            return response()->json($response,400);
+        }
+
+        $post_updated = $post->update([
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+        ]);
+        if ($post_updated) {
+            $post = Post::where('id', $user->id)->first();
+            $post_link = [
+                'href' => 'api/v1/post/' . $post->slug,
+                'method' => 'GET'
+            ];
+            $response = $this->createResponse(false,$post_link,'Post updated',null);
+            return response()->json($response, 201);
+        }
+
+        $response = $this->createResponse(true,null,'Failed to update post',null);
+        return response()->json($response, 404);
     }
 
     /**
@@ -159,8 +166,33 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($slug)
     {
-        //
+        $user = JWTAuth::parseToken()->authenticate();
+
+        if ($user->user_type != 1) {
+            $response = $this->createResponse(true,null,'Unauthorized to delete post',null);
+            return response()->json($response, 401);
+        }
+
+        $post = Post::where('slug', $slug)->first();
+        if(!$post){
+            $response = $this->createResponse(true,null,'Post Not Found',null);
+            return response()->json($response, 404);
+        }
+
+        $post_deleted = $post->delete();
+        if ($post_deleted) {
+            $post_create_link = [
+                'href' => 'api/v1/post',
+                'method' => 'POST',
+                'params' => 'title, description'
+            ];
+            $response = $this->createResponse(false,$post_create_link,'Post deleted',null);
+            return response()->json($response, 201);
+        }
+
+        $response = $this->createResponse(true,null,'Failed to delete post',null);
+        return response()->json($response, 404);
     }
 }

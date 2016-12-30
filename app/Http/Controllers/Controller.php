@@ -8,6 +8,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 use Illuminate\Http\Request;
+use phpDocumentor\Reflection\Types\Boolean;
 
 abstract class Controller extends BaseController
 {
@@ -21,5 +22,36 @@ abstract class Controller extends BaseController
                 return $value;
             }
         }, $request->all()));
+    }
+
+    //for response
+    public function createResponse($error, $data = null, $message = null,$messages = array()){
+        $response = array();
+        $response['error'] = $error;
+        if($message != null){
+            $response['message'] = $message;
+        }
+        if(!empty($messages)){
+            $response['messages'] = $messages;
+        }
+        if($data != null){
+            $response['data'] = $data;
+        }
+
+        return $response;
+    }
+
+    public function createAuthResponse($error, $token, $data = null, $message = null){
+        $response = array();
+        $response['error'] = $error;
+        $response['token'] = $token;
+        if($message != null){
+            $response['message'] = $message;
+        }
+        if($data != null){
+            $response['data'] = $data;
+        }
+
+        return $response;
     }
 }

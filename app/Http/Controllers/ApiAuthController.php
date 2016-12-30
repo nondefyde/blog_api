@@ -22,11 +22,7 @@ class ApiAuthController extends Controller
             'password' => 'required|min:5'
         ]);
         if ($validator->fails()) {
-            $response = [
-                'error'     => true,
-                "message"   => "There are problems with your input",
-                "messages"  => $validator->errors()->all()
-            ];
+            $response = $this->createResponse(true,null,"There are problems with your input",$validator->errors()->all());
             return response()->json($response,400);
         }
 
@@ -50,20 +46,10 @@ class ApiAuthController extends Controller
                 'method' => 'POST',
                 'params' => 'email, password'
             ];
-            $response = [
-                'error' => false,
-                'message' => 'User created',
-                'token'   => $token,
-                'data' => $user
-            ];
+            $response = $this->createAuthResponse(false,$token,$user,'User created');
             return response()->json($response, 201);
         }
-
-        $response = [
-            'error' => true,
-            'message' => 'Failed to save user'
-        ];
-
+        $response = $this->createResponse(true,null,'Failed to save user',null);
         return response()->json($response, 404);
     }
 
@@ -80,11 +66,7 @@ class ApiAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $response = [
-                'error'     => true,
-                "message"   => "There are problems with your input",
-                "messages"  => $validator->errors()->all()
-            ];
+            $response = $this->createResponse(true,null,"There are problems with your input",$validator->errors()->all());
             return response()->json($response,400);
         }
 
@@ -92,26 +74,16 @@ class ApiAuthController extends Controller
 
         try {
             if (! $token = JWTAuth::attempt($credentials)) {
-                $response = [
-                    'error' => true,
-                    'message'   => 'Invalid credentials'
-                ];
+                $response = $this->createResponse(true,null,'Invalid credentials',null);
                 return response()->json($response, 401);
             }
         } catch (JWTException $e) {
-            $response = [
-                'error' => true,
-                'message'   => 'Could not create token'
-            ];
+            $response = $this->createResponse(true,null,'Could not create token',null);
             return response()->json($response, 500);
         }
 
         $user = Auth::user();
-        $response = [
-            'error' => false,
-            'token'   => $token,
-            'data'  => $user
-        ];
+        $response = $this->createAuthResponse(false,$token,$user,'Sign in successful');
         return response()->json($response,200);
     }
 }
